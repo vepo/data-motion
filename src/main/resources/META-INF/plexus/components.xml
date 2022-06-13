@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<!DOCTYPE component-set>
+<component-set>
+    <components>
+
+        <component>
+            <role>org.apache.maven.lifecycle.mapping.LifecycleMapping</role>
+            <role-hint>data-motion-streamer</role-hint>
+            <implementation>org.apache.maven.lifecycle.mapping.DefaultLifecycleMapping</implementation>
+            <configuration>
+                <phases>
+                    <process-resources>${groupId}:${artifactId}:data-motion-compiler</process-resources>
+                    <compile></compile>
+                    <process-test-resources></process-test-resources>
+                    <test-compile></test-compile>
+                    <test></test>
+                    <package></package>
+                    <install></install>
+                    <deploy></deploy>
+                </phases>
+            </configuration>
+        </component>
+        <component>
+            <role>org.apache.maven.artifact.handler.ArtifactHandler</role>
+            <role-hint>data-motion-streamer</role-hint>
+            <implementation>org.apache.maven.artifact.handler.DefaultArtifactHandler</implementation>
+            <configuration>
+                <type>data-motion-streamer</type>
+                <language>java</language>
+                <addedToClasspath>true</addedToClasspath>
+            </configuration>
+        </component>
+    </components>
+</component-set>
