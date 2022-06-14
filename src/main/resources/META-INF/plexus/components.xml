@@ -2,14 +2,14 @@
 <!DOCTYPE component-set>
 <component-set>
     <components>
-
         <component>
             <role>org.apache.maven.lifecycle.mapping.LifecycleMapping</role>
             <role-hint>data-motion-streamer</role-hint>
             <implementation>org.apache.maven.lifecycle.mapping.DefaultLifecycleMapping</implementation>
             <configuration>
                 <phases>
-                    <process-resources>${groupId}:${artifactId}:data-motion-compiler</process-resources>
+                    <generate-sources>${groupId}:${artifactId}:data-motion-compiler</generate-sources>
+                    <process-resources></process-resources>
                     <compile></compile>
                     <process-test-resources></process-test-resources>
                     <test-compile></test-compile>
