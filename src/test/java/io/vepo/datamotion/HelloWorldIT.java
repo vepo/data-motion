@@ -40,6 +40,10 @@ public class HelloWorldIT {
                                       assertThat(stdOut).isEqualTo("Hello World!");
                                       return true;
                                   } else {
+                                      String stdErr = new BufferedReader(new InputStreamReader(proc.getErrorStream())).lines()
+                                                                                                                      .parallel()
+                                                                                                                      .collect(joining("\n"));
+                                      System.out.println(stdErr);
                                       return false;
                                   }
                               } catch (InterruptedException | IOException e) {
