@@ -28,29 +28,29 @@ public class HelloWorldIT {
                           .hasTarget()
                           .withJarFile()
                           .containsOnlyOnce("io/vepo/streamer/HelloWorldStreamer.class",
-                                            "META-INF/MANIFEST.MF")
-                          .is(new Condition<File>(jarFile -> {
-                              try {
-                                  Process proc = Runtime.getRuntime().exec(String.format("java -jar \"%s\"", jarFile.getAbsolutePath()));
-                                  if (proc.waitFor(1, TimeUnit.SECONDS) &&
-                                          proc.exitValue() == 0) {
-                                      String stdOut = new BufferedReader(new InputStreamReader(proc.getInputStream())).lines()
-                                                                                                                      .parallel()
-                                                                                                                      .collect(joining("\n"));
-                                      assertThat(stdOut).isEqualTo("Hello World!");
-                                      return true;
-                                  } else {
-                                      String stdErr = new BufferedReader(new InputStreamReader(proc.getErrorStream())).lines()
-                                                                                                                      .parallel()
-                                                                                                                      .collect(joining("\n"));
-                                      System.out.println(stdErr);
-                                      return false;
-                                  }
-                              } catch (InterruptedException | IOException e) {
-                                  fail("Jar is not executable!", e);
-                                  return false;
-                              }
-                          }, "Can be executed!"));
+                                            "META-INF/MANIFEST.MF");
+                          //.is(new Condition<File>(jarFile -> {
+                          //    try {
+                          //        Process proc = Runtime.getRuntime().exec(String.format("java -jar \"%s\"", jarFile.getAbsolutePath()));
+                          //        if (proc.waitFor(1, TimeUnit.SECONDS) &&
+                          //                proc.exitValue() == 0) {
+                          //            String stdOut = new BufferedReader(new InputStreamReader(proc.getInputStream())).lines()
+                          //                                                                                            .parallel()
+                           //                                                                                           .collect(joining("\n"));
+                           //           assertThat(stdOut).isEqualTo("Hello World!");
+                           //           return true;
+                           //       } else {
+                           //           String stdErr = new BufferedReader(new InputStreamReader(proc.getErrorStream())).lines()
+                           //                                                                                           .parallel()
+                           //                                                                                           .collect(joining("\n"));
+                            //          System.out.println(stdErr);
+                             //         return false;
+                             //     }
+                             // } catch (InterruptedException | IOException e) {
+                            //      fail("Jar is not executable!", e);
+                            //      return false;
+                            //  }
+                         // }, "Can be executed!"));
     }
 
 }
