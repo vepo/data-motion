@@ -8,13 +8,21 @@
             <implementation>org.apache.maven.lifecycle.mapping.DefaultLifecycleMapping</implementation>
             <configuration>
                 <phases>
-                    <generate-sources>${groupId}:${artifactId}:data-motion-compiler</generate-sources>
-                    <process-resources></process-resources>
-                    <compile></compile>
+                    <generate-sources>
+                        ${groupId}:${artifactId}:data-motion-compiler
+                    </generate-sources>
+                    <process-resources>
+                        org.apache.maven.plugins:maven-resources-plugin:resources
+                    </process-resources>
+                    <compile>
+                        org.apache.maven.plugins:maven-compiler-plugin:compile
+                    </compile>
                     <process-test-resources></process-test-resources>
                     <test-compile></test-compile>
                     <test></test>
-                    <package></package>
+                    <package>
+                        ${groupId}:${artifactId}:data-motion-packager
+                    </package>
                     <install></install>
                     <deploy></deploy>
                 </phases>
