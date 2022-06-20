@@ -1,22 +1,20 @@
 package io.vepo.datamotion;
 
 import org.apache.maven.archiver.ManifestConfiguration;
+import org.apache.maven.archiver.MavenArchiveConfiguration;
 import org.apache.maven.archiver.MavenArchiver;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
-import org.codehaus.plexus.archiver.Archiver;
-import org.apache.maven.archiver.MavenArchiveConfiguration;
-
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
+import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
 
 import java.io.File;
@@ -83,16 +81,6 @@ public class JarMojo extends AbstractMojo {
      */
     @Parameter
     private MavenArchiveConfiguration archive = new MavenArchiveConfiguration();
-
-    /**
-     * Using this property will fail your build cause it has been removed from the plugin configuration. See the
-     * <a href="https://maven.apache.org/plugins/maven-jar-plugin/">Major Version Upgrade to version 3.0.0</a> for the
-     * plugin.
-     *
-     * @deprecated For version 3.0.0 this parameter is only defined here to break the build if you use it!
-     */
-    @Parameter(property = "jar.useDefaultManifestFile", defaultValue = "false")
-    private boolean useDefaultManifestFile;
 
     /**
      *
@@ -258,12 +246,6 @@ public class JarMojo extends AbstractMojo {
      * @throws MojoExecutionException in case of an error.
      */
     public void execute() throws MojoExecutionException {
-        if (useDefaultManifestFile) {
-            throw new MojoExecutionException("You are using 'useDefaultManifestFile' which has been removed"
-                                                     + " from the maven-jar-plugin. "
-                                                     + "Please see the >>Major Version Upgrade to version 3.0.0<< on the plugin site.");
-        }
-
         if (skipIfEmpty && (!classesDirectory.exists() || classesDirectory.list().length < 1)) {
             getLog().info("Skipping packaging of the " + type);
         } else {

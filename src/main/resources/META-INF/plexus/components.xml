@@ -21,7 +21,8 @@
                     <test-compile></test-compile>
                     <test></test>
                     <package>
-                        ${groupId}:${artifactId}:data-motion-packager
+                        ${groupId}:${artifactId}:data-motion-packager,
+                        org.apache.maven.plugins:maven-shade-plugin:shade
                     </package>
                     <install></install>
                     <deploy></deploy>

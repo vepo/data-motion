@@ -102,7 +102,6 @@
             <artifactId>commons-text</artifactId>
             <version>1.9</version>
         </dependency>
-
         <!-- Tests -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
