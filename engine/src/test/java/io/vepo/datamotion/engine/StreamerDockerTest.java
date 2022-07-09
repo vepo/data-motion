@@ -13,8 +13,8 @@ import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,10 +40,11 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
+@Tag("DOCKER")
 @Testcontainers
-class StreamerTest {
+class StreamerDockerTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(StreamerTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(StreamerDockerTest.class);
     @Container
     public KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.5.0"));
     private static final String APP_ID = "STREAMER_TEST_APP";
