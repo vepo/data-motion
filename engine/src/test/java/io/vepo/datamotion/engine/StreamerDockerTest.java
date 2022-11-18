@@ -14,8 +14,8 @@ import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,10 +44,11 @@ import java.util.function.BiConsumer;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
+@Tag("DOCKER")
 @Testcontainers
-class StreamerTest {
+class StreamerDockerTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(StreamerTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(StreamerDockerTest.class);
     @Container
     public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.5.0"))
         .withEnv("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "1")
