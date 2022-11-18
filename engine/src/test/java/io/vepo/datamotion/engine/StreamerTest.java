@@ -9,6 +9,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.*;
+import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -19,6 +20,8 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.containers.wait.strategy.WaitStrategy;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -31,12 +34,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -45,7 +49,9 @@ class StreamerTest {
 
     private static final Logger logger = LoggerFactory.getLogger(StreamerTest.class);
     @Container
-    public KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.5.0"));
+    public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.5.0"))
+        .withEnv("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "1")
+        .withEnv("KAFKA_TRANSACTION_STATE_LOG_MIN_ISR", "1");
     private static final String APP_ID = "STREAMER_TEST_APP";
 
     @BeforeEach
@@ -61,6 +67,7 @@ class StreamerTest {
 
     @Test
     void passthruTest() {
+        logger.info("Is Kafka running? running={}", kafka.isRunning());
         createTopics("input", "output");
         try (Streamer streamer = new Streamer(StreamerDefinition.builder()
                                                                 .applicationId(APP_ID)
@@ -68,7 +75,7 @@ class StreamerTest {
                                                                 .outputTopic("output")
                                                                 .bootstrapServers(kafka.getBootstrapServers())
                                                                 .build());
-             TestConsumer<String, Long> consumer = start("output", StringDeserializer.class, LongDeserializer.class)) {
+             TestConsumer<String, String> consumer = start("output", StringDeserializer.class, StringDeserializer.class)) {
             streamer.start();
             sendMessage("input", "Hello World!");
             consumer.next((key, value) -> System.out.println("Key=" + key + " value=" + value), Duration.ofSeconds(160));
@@ -77,14 +84,27 @@ class StreamerTest {
     }
 
     private void createTopics(String... topics) {
-        logger.info("Creating topics! topics={}", topics);
-        List<NewTopic> newTopics =
-                Arrays.stream(topics)
-                      .map(topic -> new NewTopic(topic, 6, (short) 1))
-                      .collect(Collectors.toList());
+        logger.info("Creating topics! topics={}", Arrays.toString(topics));
         try (AdminClient admin = AdminClient.create(Collections.singletonMap(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers()))) {
-            CreateTopicsResult results = admin.createTopics(newTopics);
-            logger.info("Create topic results={}", results.values());
+            Arrays.stream(topics)
+                  .map(topic -> new NewTopic(topic, 1, (short) 1))
+                  .forEach(command-> {
+                        CreateTopicsResult results = admin.createTopics(Arrays.asList(command));
+                        logger.info("Create topic results={}", results.values());
+                        try {
+                            results.all().get();
+                            admin.describeTopics(Arrays.asList(command.name()))
+                                 .allTopicNames()
+                                 .get()
+                                 .forEach((key, value)->{
+                                    logger.info("Topic information! id={} value={}", key, value);
+                            });
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        } catch (ExecutionException e) {
+                            logger.error("Error creating topic!", e);
+                        }
+                  });
         }
     }
 
@@ -105,6 +125,7 @@ class StreamerTest {
         private KafkaConsumer<K, V> consumer;
         private List<ConsumerRecord<K, V>> messages = Collections.synchronizedList(new LinkedList<>());
         private AtomicBoolean running = new AtomicBoolean(true);
+        private CountDownLatch latch = new CountDownLatch(1);
 
         public TestConsumer(KafkaConsumer<K, V> consumer, String topic) {
             this.consumer = consumer;
@@ -112,13 +133,18 @@ class StreamerTest {
             Executors.newSingleThreadExecutor()
                      .submit(() -> {
                          while (running.get()) {
-                             consumer.poll(Duration.ofMillis(500)).forEach(record -> messages.add(record));
+                             consumer.poll(Duration.ofMillis(500))
+                                     .forEach(record -> {
+                                        logger.info("Message received! record={}", record); 
+                                        messages.add(record);
+                                    });
                              try {
                                  Thread.sleep(50);
                              } catch (InterruptedException e) {
                                  Thread.currentThread().interrupt();
                              }
                          }
+                         latch.countDown();
                      });
         }
 
@@ -140,6 +166,12 @@ class StreamerTest {
 
         @Override
         public void close() {
+            running.set(false);
+            try {
+                latch.await(2, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
             consumer.close();
         }
 

@@ -1,11 +1,14 @@
 package io.vepo.datamotion.engine;
 
 import io.vepo.datamotion.configuration.StreamerDefinition;
+
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.KafkaStreams.State;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.kstream.KTable;
@@ -40,6 +43,8 @@ public class Streamer implements Closeable {
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, definition.getBootstrapServers());
         props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, 1);
         StreamsBuilder builder = new StreamsBuilder();
         applyDefinition(builder.stream(definition.getInputTopic()))
                 .to(definition.getOutputTopic(), Produced.with(Serdes.String(), Serdes.String()));
@@ -55,11 +60,26 @@ public class Streamer implements Closeable {
                    }
                });
         streams.start();
+
+        while (streams.state() != State.RUNNING) {
+            try {
+                Thread.sleep(500);
+                if (streams.state() == State.ERROR) {
+                    return this;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        logger.info("Streamer started! definition={}", definition);
         return this;
     }
 
     private KStream<String, String> applyDefinition(KStream<String, String> stream) {
-        return stream;
+        return stream.peek((key, value) ->{
+            logger.info("Message passed! key={} value={}", key, value);
+        });
     }
 
     public void join() {
@@ -72,9 +92,6 @@ public class Streamer implements Closeable {
 
     @Override
     public void close() {
-        StringWriter sw = new StringWriter();
-        new Throwable("").printStackTrace(new PrintWriter(sw));
-        logger.info("Stack trace! stack={}", sw.toString());
         logger.info("Request shutdown!");
         latch.countDown();
         streams.close();
