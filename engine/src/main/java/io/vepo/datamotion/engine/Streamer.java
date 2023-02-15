@@ -1,50 +1,68 @@
 package io.vepo.datamotion.engine;
 
-import io.vepo.datamotion.configuration.StreamerDefinition;
-
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.utils.Bytes;
-import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.KeyValue;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.Topology;
-import org.apache.kafka.streams.KafkaStreams.State;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Produced;
-import org.apache.kafka.streams.processor.To;
-import org.apache.kafka.streams.state.KeyValueStore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Closeable;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 
-public class Streamer implements Closeable {
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.KafkaStreams.State;
+import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.Topology;
+import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.Produced;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.vepo.datamotion.configuration.Deserializer;
+import io.vepo.datamotion.configuration.Serializer;
+import io.vepo.datamotion.configuration.StreamerDefinition;
+
+public class Streamer<I, O> implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(Streamer.class);
-    private final StreamerDefinition definition;
+    private final StreamerDefinition<I, O> definition;
     private CountDownLatch latch;
     private KafkaStreams streams;
 
-    public Streamer(StreamerDefinition definition) {
+    public Streamer(StreamerDefinition<I, O> definition) {
         this.definition = definition;
     }
 
-    public static Topology buildKafkaTopology(StreamerDefinition definition) {
+    public static <I, O> Topology buildKafkaTopology(StreamerDefinition<I, O> definition) {
         StreamsBuilder builder = new StreamsBuilder();
-        applyDefinition(builder.stream(definition.getInputTopic()))
-                .to(definition.getOutputTopic(), Produced.with(Serdes.String(), Serdes.String()));
+        KStream<String, I> stream = builder.stream(definition.getInputTopic(), Consumed.<String, I>with(Serdes.String(), serde(definition.getDeserializer())));
+        KStream<String, O> defined = applyDefinition(stream);
+        defined.to(definition.getOutputTopic(), Produced.<String, O>with(Serdes.String(), serde(definition.getSerializer())));
         return builder.build();
     }
 
-    public static Properties buildStreamProperties(StreamerDefinition definition) {
+    private static <O> Serde<O> serde(Serializer serializer) {
+        switch(serializer) {
+            case STRING:
+                return (Serde<O>) Serdes.String();
+            case LONG:
+                return (Serde<O>) Serdes.Long();
+            default:
+                throw new IllegalArgumentException("Not implemented yet! serializer=" + serializer);
+        }
+    }
+
+    private static <I> Serde<I> serde(Deserializer deserializer) {
+        switch(deserializer) {
+            case STRING:
+                return (Serde<I>) Serdes.String();
+            case LONG:
+                return (Serde<I>) Serdes.Long();
+            default:
+                throw new IllegalArgumentException("Not implemented yet! deserializer=" + deserializer);
+        }
+    }
+
+    public static <I, O> Properties buildStreamProperties(StreamerDefinition<I, O> definition) {
         Properties props = new Properties();
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, definition.getApplicationId());
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, definition.getBootstrapServers());
@@ -57,7 +75,7 @@ public class Streamer implements Closeable {
     }
 
 
-    public Streamer start() {
+    public Streamer<I, O> start() {
         logger.info("Starting Streamer! definition={}", definition);
         latch = new CountDownLatch(1);
         streams = new KafkaStreams(buildKafkaTopology(definition), buildStreamProperties(definition));
@@ -88,8 +106,8 @@ public class Streamer implements Closeable {
         return this;
     }
 
-    private static KStream<String, String> applyDefinition(KStream<String, String> stream) {
-        return stream.peek((key, value) ->{
+    private static <I, O> KStream<String, O> applyDefinition(KStream<String, I> stream) {
+        return (KStream<String, O>) stream.peek((key, value) ->{
             logger.info("Message passed! key={} value={}", key, value);
         });
     }

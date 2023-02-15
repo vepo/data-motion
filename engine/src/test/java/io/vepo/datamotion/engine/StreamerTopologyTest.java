@@ -1,5 +1,7 @@
 package io.vepo.datamotion.engine;
 
+import io.vepo.datamotion.configuration.Deserializer;
+import io.vepo.datamotion.configuration.Serializer;
 import io.vepo.datamotion.configuration.StreamerDefinition;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KeyValue;
@@ -21,7 +23,7 @@ public class StreamerTopologyTest {
     @DisplayName("Passthru")
     void passthruTest() {
 
-        StreamerDefinition definition = StreamerDefinition.builder()
+        StreamerDefinition<String, String> definition = StreamerDefinition.<String, String>builder(Serializer.STRING, Deserializer.STRING)
                                                           .applicationId(APP_ID)
                                                           .inputTopic("input")
                                                           .outputTopic("output")

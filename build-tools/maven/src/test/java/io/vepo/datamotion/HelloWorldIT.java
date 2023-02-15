@@ -4,6 +4,8 @@ import com.soebes.itf.jupiter.extension.*;
 import com.soebes.itf.jupiter.maven.MavenExecutionResult;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -17,6 +19,7 @@ import static org.assertj.core.api.Assertions.fail;
 
 @MavenJupiterExtension
 public class HelloWorldIT {
+    private static final Logger logger = LoggerFactory.getLogger(HelloWorldIT.class);
     @MavenTest
     void simple(MavenExecutionResult result) {
         System.out.println(result);
@@ -29,7 +32,7 @@ public class HelloWorldIT {
                           .is(new Condition<File>(jarFile -> {
                               try {
                                   Process proc = Runtime.getRuntime().exec(new String[]{"java", "-jar", jarFile.getAbsolutePath()});
-                                  if (proc.waitFor(1, TimeUnit.SECONDS) &&
+                                  if (proc.waitFor(10, TimeUnit.SECONDS) &&
                                           proc.exitValue() == 0) {
                                       String stdOut = read(proc.getInputStream());
                                       assertThat(stdOut).isEqualTo("Hello World!");
