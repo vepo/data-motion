@@ -24,6 +24,10 @@ public class StreamerTopologyTest {
     void passthruTest() {
         StreamerDefinition<String, String, String, String> definition = StreamerDefinition.<String, String, String, String>builder()
                                                                                           .applicationId(APP_ID)
+                                                                                          .keySerializer(Serializer.STRING)
+                                                                                          .valueSerializer(Serializer.STRING)
+                                                                                          .keyDeserializer(Deserializer.STRING)
+                                                                                          .valueDeserializer(Deserializer.STRING)
                                                                                           .inputTopic("input")
                                                                                           .outputTopic("output")
                                                                                           .bootstrapServers("localhost:90921")
