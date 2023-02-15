@@ -25,6 +25,7 @@
 
         <!-- Dependencies -->
         <kafka.version>3.2.0</kafka.version>
+        <confluent.version>7.3.1</confluent.version>
         <testcontainers.version>1.17.3</testcontainers.version>
         <junit.jupiter.version>5.9.0-M1</junit.jupiter.version>
         <assertj.version>3.23.1</assertj.version>
@@ -36,6 +37,13 @@
         <module>engine</module>
         <module>configuration</module>
     </modules>
+
+    <repositories>
+        <repository>
+            <id>Confluent</id>
+            <url>https://packages.confluent.io/maven/</url>
+        </repository>
+    </repositories>
 
     <dependencyManagement>
         <dependencies>

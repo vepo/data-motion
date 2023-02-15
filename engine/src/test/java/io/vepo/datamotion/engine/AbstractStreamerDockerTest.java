@@ -27,7 +27,6 @@ import java.util.function.BiConsumer;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
-import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -38,6 +37,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.AfterEach;
@@ -46,7 +46,6 @@ import org.junit.jupiter.api.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.KafkaContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
@@ -105,8 +104,13 @@ abstract class AbstractStreamerDockerTest {
         }
     }
 
-    protected <K, V> TestConsumer<K, V> start(String topic, Class<? extends Deserializer<K>> keyDeserializerClass,
-            Class<? extends Deserializer<V>> valueDeserialzierClass) {
+    
+
+    protected TestConsumer<Object, Object> startPojo(String topic, Class keyDeserializerClass, Class valueDeserialzierClass) {
+        return start(topic, keyDeserializerClass, valueDeserialzierClass);
+    }
+
+    protected <K, V> TestConsumer<K, V> start(String topic, Class<? extends Deserializer<K>> keyDeserializerClass, Class<? extends Deserializer<V>> valueDeserialzierClass) {
         logger.info("Starting consumer...");
         Properties configProperties = new Properties();
         configProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
@@ -175,18 +179,23 @@ abstract class AbstractStreamerDockerTest {
     }
 
     protected <V> void sendMessage(String topic, V message) {
+        sendMessage(topic, null, message);
+    }
+
+    
+    protected <K, V> void sendMessage(String topic, K key, V message) {
+        sendMessage(topic, key, serializerFor(key), message, serializerFor(message));
+    }
+
+    protected <K, V> void sendMessage(String topic, K key, Class<?> keySerializer, V message, Class<?> valueSerializer) {
         logger.info("Sending message! topic={} message={}", topic, message);
         Properties configProperties = new Properties();
         configProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
-        configProperties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        if (message instanceof String) {
-            configProperties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        } else if (message instanceof Long) {
-            configProperties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, LongSerializer.class);
-        }
+        configProperties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, keySerializer);
+        configProperties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, valueSerializer);
 
-        try (Producer<String, V> producer = new KafkaProducer<>(configProperties)) {
-            ProducerRecord<String, V> rec = new ProducerRecord<>(topic, message);
+        try (Producer<K, V> producer = new KafkaProducer<>(configProperties)) {
+            ProducerRecord<K, V> rec = new ProducerRecord<>(topic, key, message);
             Future<RecordMetadata> results = producer.send(rec);
             RecordMetadata metadata = results.get();
             logger.info("Message sent! metadata={}", metadata);
@@ -194,6 +203,18 @@ abstract class AbstractStreamerDockerTest {
             fail("Error sending message!", e);
         } catch (ExecutionException e) {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private Class<?> serializerFor(Object value) {
+        if (value instanceof String) {
+            return StringSerializer.class;
+        } else if (value instanceof Long) {
+            return LongSerializer.class;
+        } else if (value instanceof Integer) {
+            return IntegerSerializer.class;
+        } else {
+            throw new IllegalStateException("Serializer not implemented! class=" + value.getClass());
         }
     }
 }

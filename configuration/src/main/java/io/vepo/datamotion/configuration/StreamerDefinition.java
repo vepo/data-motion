@@ -2,64 +2,95 @@ package io.vepo.datamotion.configuration;
 
 import java.util.Objects;
 
-public class StreamerDefinition<I, O> {
+public class StreamerDefinition<KI, VI, KO, VO> {
 
-    public static class StreamerDefinitionBuilder<I, O> {
-        private final Serializer serializer;
-        private final Deserializer deserializer;
+    public static class StreamerDefinitionBuilder<KI, VI, KO, VO> {
+        private Serializer keySerializer;
+        private Serializer valueSerializer;
+        private Deserializer keyDeserializer;
+        private Deserializer valueDeserializer;
         private String bootstrapServers;
         private String applicationId;
         private String inputTopic;
         private String outputTopic;
 
-        private StreamerDefinitionBuilder(Serializer serializer, Deserializer deserializer) {
-            this.serializer = serializer;
-            this.deserializer = deserializer;
+        private StreamerDefinitionBuilder() {
         }
 
-        public StreamerDefinitionBuilder<I, O> bootstrapServers(String bootstrapServers) {
+        public StreamerDefinitionBuilder<KI, VI, KO, VO> keySerializer(Serializer keySerializer) {
+            this.keySerializer = keySerializer;
+            return this;
+        }
+
+        public StreamerDefinitionBuilder<KI, VI, KO, VO> valueSerializer(Serializer valueSerializer) {
+            this.valueSerializer = valueSerializer;
+            return this;
+        }
+
+        public StreamerDefinitionBuilder<KI, VI, KO, VO> keyDeserializer(Deserializer keyDeserializer) {
+            this.keyDeserializer = keyDeserializer;
+            return this;
+        }
+
+        public StreamerDefinitionBuilder<KI, VI, KO, VO> valueDeserializer(Deserializer valueDeserializer) {
+            this.valueDeserializer = valueDeserializer;
+            return this;
+        }
+
+        public StreamerDefinitionBuilder<KI, VI, KO, VO> bootstrapServers(String bootstrapServers) {
             this.bootstrapServers = bootstrapServers;
             return this;
         }
 
-        public StreamerDefinitionBuilder<I, O> applicationId(String applicationId) {
+        public StreamerDefinitionBuilder<KI, VI, KO, VO> applicationId(String applicationId) {
             this.applicationId = applicationId;
             return this;
         }
 
-        public StreamerDefinitionBuilder<I, O> inputTopic(String inputTopic) {
+        public StreamerDefinitionBuilder<KI, VI, KO, VO> inputTopic(String inputTopic) {
             this.inputTopic = inputTopic;
             return this;
         }
 
-        public StreamerDefinitionBuilder<I, O> outputTopic(String outputTopic) {
+        public StreamerDefinitionBuilder<KI, VI, KO, VO> outputTopic(String outputTopic) {
             this.outputTopic = outputTopic;
             return this;
         }
 
-        public StreamerDefinition<I, O> build() {
+        public StreamerDefinition<KI, VI, KO, VO> build() {
+            Objects.requireNonNull(this.keySerializer, "keySerializer is a required value!");
+            Objects.requireNonNull(this.valueSerializer, "valueSerializer is a required value!");
+            Objects.requireNonNull(this.keyDeserializer, "keyDeserializer is a required value!");
+            Objects.requireNonNull(this.valueDeserializer, "valueDeserializer is a required value!");
+            Objects.requireNonNull(this.bootstrapServers, "bootstrapServers is a required value!");
+            Objects.requireNonNull(this.inputTopic, "inputTopic is a required value!");
+            Objects.requireNonNull(this.outputTopic, "outputTopic is a required value!");
             return new StreamerDefinition<>(this);
         }
     }
 
-    public static <I, O> StreamerDefinitionBuilder<I, O> builder(Serializer serializer, Deserializer deserializer) {
-        return new StreamerDefinitionBuilder<>(serializer, deserializer);
+    public static <KI, VI, KO, VO> StreamerDefinitionBuilder<KI, VI, KO, VO> builder() {
+        return new StreamerDefinitionBuilder<>();
     }
 
-    private final Serializer serializer;
-    private final Deserializer deserializer;
+    private final Serializer keySerializer;
+    private final Serializer valueSerializer;
+    private final Deserializer keyDeserializer;
+    private final Deserializer valueDeserializer;
     private final String bootstrapServers;
     private final String applicationId;
     private final String inputTopic;
     private final String outputTopic;
 
-    private StreamerDefinition(StreamerDefinitionBuilder<I, O> builder) {
+    private StreamerDefinition(StreamerDefinitionBuilder<KI, VI, KO, VO> builder) {
         this.bootstrapServers = builder.bootstrapServers;
         this.applicationId = builder.applicationId;
         this.inputTopic = builder.inputTopic;
         this.outputTopic = builder.outputTopic;
-        this.serializer = builder.serializer;
-        this.deserializer = builder.deserializer;
+        this.keySerializer = builder.keySerializer;
+        this.valueSerializer = builder.valueSerializer;
+        this.keyDeserializer = builder.keyDeserializer;
+        this.valueDeserializer = builder.valueDeserializer;
     }
 
     public String getBootstrapServers() {
@@ -78,35 +109,51 @@ public class StreamerDefinition<I, O> {
         return outputTopic;
     }
 
-    public Serializer getSerializer() {
-        return serializer;
+    public Serializer getKeySerializer() {
+        return keySerializer;
     }
 
-    public Deserializer getDeserializer() {
-        return deserializer;
+    public Deserializer getKeyDeserializer() {
+        return keyDeserializer;
+    }
+
+    public Deserializer getValueDeserializer() {
+        return valueDeserializer;
+    }
+
+    public Serializer getValueSerializer() {
+        return valueSerializer;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        StreamerDefinition<?, ?> that = (StreamerDefinition<?, ?>) o;
-        return Objects.equals(serializer, that.serializer) && 
-                Objects.equals(deserializer, that.deserializer) &&        
-                Objects.equals(bootstrapServers, that.bootstrapServers) &&
-                Objects.equals(applicationId, that.applicationId) &&
-                Objects.equals(inputTopic, that.inputTopic) &&
-                Objects.equals(outputTopic, that.outputTopic);
+        if (this == o) {
+            return true;
+        } else if (o == null || getClass() != o.getClass()) {
+            return false;
+        } else {
+            StreamerDefinition<?, ?, ?, ?> that = (StreamerDefinition<?, ?, ?, ?>) o;
+            return Objects.equals(keySerializer, that.keySerializer) &&
+                    Objects.equals(valueSerializer, that.valueSerializer) &&
+                    Objects.equals(keyDeserializer, that.keyDeserializer) &&
+                    Objects.equals(valueDeserializer, that.valueDeserializer) &&
+                    Objects.equals(bootstrapServers, that.bootstrapServers) &&
+                    Objects.equals(applicationId, that.applicationId) &&
+                    Objects.equals(inputTopic, that.inputTopic) &&
+                    Objects.equals(outputTopic, that.outputTopic);
+        }
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(bootstrapServers, applicationId, inputTopic, outputTopic);
+        return Objects.hash(keySerializer, valueSerializer, keyDeserializer, valueDeserializer, bootstrapServers,
+                applicationId, inputTopic, outputTopic);
     }
 
     @Override
     public String toString() {
-        return String.format("StreamerDefinition[serializer=%s, deserializer=%s, bootstrapServers='%s', applicationId='%s', inputTopic='%s', outputTopic='%s']",
-                             serializer, deserializer, bootstrapServers, applicationId, inputTopic, outputTopic);
+        return String.format(
+                "StreamerDefinition[keySerializer=%s, valueSerializer=%s, keyDeserializer=%s, valueDeserializer=%s, bootstrapServers='%s', applicationId='%s', inputTopic='%s', outputTopic='%s']",
+                keySerializer, valueSerializer, keyDeserializer, valueDeserializer, bootstrapServers, applicationId, inputTopic, outputTopic);
     }
 }

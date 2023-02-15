@@ -22,13 +22,12 @@ public class StreamerTopologyTest {
     @Test
     @DisplayName("Passthru")
     void passthruTest() {
-
-        StreamerDefinition<String, String> definition = StreamerDefinition.<String, String>builder(Serializer.STRING, Deserializer.STRING)
-                                                          .applicationId(APP_ID)
-                                                          .inputTopic("input")
-                                                          .outputTopic("output")
-                                                          .bootstrapServers("localhost:90921")
-                                                          .build();
+        StreamerDefinition<String, String, String, String> definition = StreamerDefinition.<String, String, String, String>builder()
+                                                                                          .applicationId(APP_ID)
+                                                                                          .inputTopic("input")
+                                                                                          .outputTopic("output")
+                                                                                          .bootstrapServers("localhost:90921")
+                                                                                          .build();
         TopologyTestDriver testDriver = new TopologyTestDriver(buildKafkaTopology(definition),
                                                                buildStreamProperties(definition));
         TestInputTopic<String, String> inputTopic = testDriver.createInputTopic("input", Serdes.String().serializer(), Serdes.String().serializer());
