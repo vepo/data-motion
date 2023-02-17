@@ -22,7 +22,7 @@ public class StreamerTopologyTest {
     @Test
     @DisplayName("Passthru")
     void passthruTest() {
-        StreamerDefinition<String, String, String, String> definition = StreamerDefinition.<String, String, String, String>builder()
+        StreamerDefinition<String, String, String, String> definition = StreamerDefinition.<String, String, String, String>builder(String.class, String.class, String.class, String.class)
                                                                                           .applicationId(APP_ID)
                                                                                           .keySerializer(Serializer.STRING)
                                                                                           .valueSerializer(Serializer.STRING)

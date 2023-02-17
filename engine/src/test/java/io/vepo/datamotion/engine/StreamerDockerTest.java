@@ -6,28 +6,26 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.time.Duration;
 import java.util.Objects;
 
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
+import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.confluent.kafka.serializers.KafkaJsonSerializer;
 import io.vepo.datamotion.configuration.Deserializer;
 import io.vepo.datamotion.configuration.Serializer;
 import io.vepo.datamotion.configuration.StreamerDefinition;
-import io.confluent.kafka.serializers.KafkaJsonDeserializer;
-import io.confluent.kafka.serializers.KafkaJsonSerializer;
+import io.vepo.datamotion.engine.serdes.OfflineAvroSerde;
 
 @DisplayName("Docker")
 class StreamerDockerTest extends AbstractStreamerDockerTest {
-
-    private static final Logger logger = LoggerFactory.getLogger(StreamerDockerTest.class);
 
     public static class KeyPojo {
         private String id;
@@ -128,9 +126,8 @@ class StreamerDockerTest extends AbstractStreamerDockerTest {
         @Test
         @DisplayName("String")
         void stringTest() {
-            logger.info("Is Kafka running? running={}", kafka.isRunning());
             createTopics("input", "output");
-            try (Streamer<String, String, String, String> streamer = new Streamer<>(StreamerDefinition.<String, String, String, String>builder()
+            try (Streamer<String, String, String, String> streamer = new Streamer<>(StreamerDefinition.<String, String, String, String>builder(String.class, String.class, String.class, String.class)
                                                                                                       .applicationId(APP_ID)
                                                                                                       .keySerializer(Serializer.STRING)
                                                                                                       .valueSerializer(Serializer.STRING)
@@ -147,16 +144,14 @@ class StreamerDockerTest extends AbstractStreamerDockerTest {
                     assertEquals("key-1", key);
                     assertEquals("Hello World!", value);
                 }, Duration.ofSeconds(160));
-                logger.info("Test finished!");
             }
         }
 
         @Test
         @DisplayName("Long")
         void longTest() {
-            logger.info("Is Kafka running? running={}", kafka.isRunning());
             createTopics("input", "output");
-            try (Streamer<Long, Long, Long, Long> streamer = new Streamer<>(StreamerDefinition.<Long, Long, Long, Long>builder()
+            try (Streamer<Long, Long, Long, Long> streamer = new Streamer<>(StreamerDefinition.<Long, Long, Long, Long>builder(Long.class, Long.class, Long.class, Long.class)
                                                                                               .applicationId(APP_ID)
                                                                                               .keySerializer(Serializer.LONG)
                                                                                               .valueSerializer(Serializer.LONG)
@@ -173,16 +168,14 @@ class StreamerDockerTest extends AbstractStreamerDockerTest {
                     assertEquals(8888L, key);
                     assertEquals(55555L, value);
                 }, Duration.ofSeconds(160));
-                logger.info("Test finished!");
             }
         }
 
         @Test
         @DisplayName("Int")
         void intTest() {
-            logger.info("Is Kafka running? running={}", kafka.isRunning());
             createTopics("input", "output");
-            try (Streamer<Integer, Integer, Integer, Integer> streamer = new Streamer<>(StreamerDefinition.<Integer, Integer, Integer, Integer>builder()
+            try (Streamer<Integer, Integer, Integer, Integer> streamer = new Streamer<>(StreamerDefinition.<Integer, Integer, Integer, Integer>builder(Integer.class, Integer.class, Integer.class, Integer.class)
                                                                                                           .applicationId(APP_ID)
                                                                                                           .keySerializer(Serializer.INT)
                                                                                                           .valueSerializer(Serializer.INT)
@@ -199,16 +192,14 @@ class StreamerDockerTest extends AbstractStreamerDockerTest {
                     assertEquals(4444, key);
                     assertEquals(555, value);
                 }, Duration.ofSeconds(160));
-                logger.info("Test finished!");
             }
         }
 
         @Test
         @DisplayName("JSON")
         void jsonTest() {
-            logger.info("Is Kafka running? running={}", kafka.isRunning());
             createTopics("input", "output");
-            try (Streamer<KeyPojo, ValuePojo, KeyPojo, ValuePojo> streamer = new Streamer<>(StreamerDefinition.<KeyPojo, ValuePojo, KeyPojo, ValuePojo>builder()
+            try (Streamer<KeyPojo, ValuePojo, KeyPojo, ValuePojo> streamer = new Streamer<>(StreamerDefinition.<KeyPojo, ValuePojo, KeyPojo, ValuePojo>builder(KeyPojo.class, ValuePojo.class, KeyPojo.class, ValuePojo.class)
                                                                                                               .applicationId(APP_ID)
                                                                                                               .keySerializer(Serializer.JSON)
                                                                                                               .valueSerializer(Serializer.JSON)
@@ -230,7 +221,38 @@ class StreamerDockerTest extends AbstractStreamerDockerTest {
                         fail(ex);
                     }
                 }, Duration.ofSeconds(160));
-                logger.info("Test finished!");
+            }
+        }
+
+        @Test
+        @DisplayName("AVRO")
+        void avroTest() {
+            createTopics("input", "output");
+            try (Streamer<KeyPojo, ValuePojo, KeyPojo, ValuePojo> streamer = new Streamer<>(StreamerDefinition.<KeyPojo, ValuePojo, KeyPojo, ValuePojo>builder(KeyPojo.class, ValuePojo.class, KeyPojo.class, ValuePojo.class)
+                                                                                                              .applicationId(APP_ID)
+                                                                                                              .keySerializer(Serializer.AVRO)
+                                                                                                              .valueSerializer(Serializer.AVRO)
+                                                                                                              .keyDeserializer(Deserializer.AVRO)
+                                                                                                              .valueDeserializer(Deserializer.AVRO)
+                                                                                                              .inputTopic("input")
+                                                                                                              .outputTopic("output")
+                                                                                                              .bootstrapServers(kafka.getBootstrapServers())
+                                                                                                              .build());
+                  TestConsumer<byte[], byte[]> consumer = start("output", ByteArrayDeserializer.class, ByteArrayDeserializer.class)) {
+                
+                Serde<KeyPojo> keySerde = new OfflineAvroSerde<>(KeyPojo.class);
+                Serde<ValuePojo> valueSerde = new OfflineAvroSerde<>(ValuePojo.class);
+                streamer.start();
+                sendMessage("input", keySerde.serializer().serialize(null, new KeyPojo("XXXX")), ByteArraySerializer.class , valueSerde.serializer().serialize(null,  new ValuePojo("YYY", 33)), ByteArraySerializer.class);
+                consumer.next((key, value) -> {
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        assertEquals(new KeyPojo("XXXX"), keySerde.deserializer().deserialize(null, key));
+                        assertEquals(new ValuePojo("YYY", 33), valueSerde.deserializer().deserialize(null, value));
+                    } catch (Exception ex) {
+                        fail(ex);
+                    }
+                }, Duration.ofSeconds(160));
             }
         }
     }

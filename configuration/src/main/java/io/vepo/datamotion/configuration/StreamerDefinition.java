@@ -5,6 +5,10 @@ import java.util.Objects;
 public class StreamerDefinition<KI, VI, KO, VO> {
 
     public static class StreamerDefinitionBuilder<KI, VI, KO, VO> {
+        private final Class<KI> inputKeyClass;
+        private final Class<VI> inputValueClass;
+        private final Class<KO> outputKeyClass;
+        private final Class<VO> outputValueClass;
         private Serializer keySerializer;
         private Serializer valueSerializer;
         private Deserializer keyDeserializer;
@@ -14,7 +18,11 @@ public class StreamerDefinition<KI, VI, KO, VO> {
         private String inputTopic;
         private String outputTopic;
 
-        private StreamerDefinitionBuilder() {
+        private StreamerDefinitionBuilder(Class<KI> inputKeyClass, Class<VI> inputValueClass, Class<KO> outputKeyClass, Class<VO> outputValueClass) {
+            this.inputKeyClass = inputKeyClass;
+            this.inputValueClass = inputValueClass;
+            this.outputKeyClass = outputKeyClass;
+            this.outputValueClass = outputValueClass;
         }
 
         public StreamerDefinitionBuilder<KI, VI, KO, VO> keySerializer(Serializer keySerializer) {
@@ -69,10 +77,17 @@ public class StreamerDefinition<KI, VI, KO, VO> {
         }
     }
 
-    public static <KI, VI, KO, VO> StreamerDefinitionBuilder<KI, VI, KO, VO> builder() {
-        return new StreamerDefinitionBuilder<>();
+    public static <KI, VI, KO, VO> StreamerDefinitionBuilder<KI, VI, KO, VO> builder(Class<KI> inputKeyClass, 
+                                                                                     Class<VI> inputValueClass, 
+                                                                                     Class<KO> outputKeyClass, 
+                                                                                     Class<VO> outputValueClass) {
+        return new StreamerDefinitionBuilder<>(inputKeyClass, inputValueClass, outputKeyClass, outputValueClass);
     }
 
+    private final Class<KI> inputKeyClass;
+    private final Class<VI> inputValueClass;
+    private final Class<KO> outputKeyClass;
+    private final Class<VO> outputValueClass;
     private final Serializer keySerializer;
     private final Serializer valueSerializer;
     private final Deserializer keyDeserializer;
@@ -83,6 +98,11 @@ public class StreamerDefinition<KI, VI, KO, VO> {
     private final String outputTopic;
 
     private StreamerDefinition(StreamerDefinitionBuilder<KI, VI, KO, VO> builder) {
+        this.inputKeyClass = builder.inputKeyClass;
+        this.inputValueClass = builder.inputValueClass;
+        this.outputKeyClass = builder.outputKeyClass;
+        this.outputValueClass = builder.outputValueClass;
+
         this.bootstrapServers = builder.bootstrapServers;
         this.applicationId = builder.applicationId;
         this.inputTopic = builder.inputTopic;
@@ -111,6 +131,22 @@ public class StreamerDefinition<KI, VI, KO, VO> {
 
     public Serializer getKeySerializer() {
         return keySerializer;
+    }
+
+    public Class<KI> getInputKeyClass() {
+        return inputKeyClass;
+    }
+
+    public Class<VI> getInputValueClass() {
+        return inputValueClass;
+    }
+
+    public Class<KO> getOutputKeyClass() {
+        return outputKeyClass;
+    }
+
+    public Class<VO> getOutputValueClass() {
+        return outputValueClass;
     }
 
     public Deserializer getKeyDeserializer() {

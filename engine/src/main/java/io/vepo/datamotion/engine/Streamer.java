@@ -23,7 +23,8 @@ import io.confluent.kafka.serializers.KafkaJsonDeserializer;
 import io.confluent.kafka.serializers.KafkaJsonSerializer;
 import io.vepo.datamotion.configuration.Deserializer;
 import io.vepo.datamotion.configuration.Serializer;
-import io.vepo.datamotion.configuration.StreamerDefinition;
+import io.vepo.datamotion.configuration.StreamerDefinition;/*  */
+import io.vepo.datamotion.engine.serdes.OfflineAvroSerde;
 
 public class Streamer<KI, VI, KO, VO> implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(Streamer.class);
@@ -37,13 +38,13 @@ public class Streamer<KI, VI, KO, VO> implements Closeable {
 
     public static <KI, VI, KO, VO> Topology buildKafkaTopology(StreamerDefinition<KI, VI, KO, VO> definition) {
         StreamsBuilder builder = new StreamsBuilder();
-        KStream<KI, VI> stream = builder.stream(definition.getInputTopic(), Consumed.<KI, VI>with(serde(definition.getKeyDeserializer()), serde(definition.getValueDeserializer())));
+        KStream<KI, VI> stream = builder.stream(definition.getInputTopic(), Consumed.<KI, VI>with(serde(definition.getKeyDeserializer(), definition.getInputKeyClass()), serde(definition.getValueDeserializer(), definition.getInputValueClass())));
         KStream<KO, VO> defined = applyDefinition(stream);
-        defined.to(definition.getOutputTopic(), Produced.<KO, VO>with(serde(definition.getKeySerializer()), serde(definition.getValueSerializer())));
+        defined.to(definition.getOutputTopic(), Produced.<KO, VO>with(serde(definition.getKeySerializer(), definition.getOutputKeyClass()), serde(definition.getValueSerializer(), definition.getOutputValueClass())));
         return builder.build();
     }
 
-    private static <O> Serde<O> serde(Serializer serializer) {
+    private static <O> Serde<O> serde(Serializer serializer, Class<O> valueClass) {
         switch(serializer) {
             case STRING:
                 return (Serde<O>) Serdes.String();
@@ -57,12 +58,14 @@ public class Streamer<KI, VI, KO, VO> implements Closeable {
                 KafkaJsonDeserializer jsonDeserializer = new KafkaJsonDeserializer();
                 jsonDeserializer.configure(Collections.emptyMap(), false);
                 return (Serde<O>) Serdes.serdeFrom(jsonSerializer, jsonDeserializer);
+            case AVRO:
+                return (Serde<O>) new OfflineAvroSerde<>(valueClass);
             default:
                 throw new IllegalArgumentException("Not implemented yet! serializer=" + serializer);
         }
     }
 
-    private static <I> Serde<I> serde(Deserializer deserializer) {
+    private static <I> Serde<I> serde(Deserializer deserializer, Class<I> valueClass) {
         switch(deserializer) {
             case STRING:
                 return (Serde<I>) Serdes.String();
@@ -76,6 +79,8 @@ public class Streamer<KI, VI, KO, VO> implements Closeable {
                 KafkaJsonDeserializer jsonDeserializer = new KafkaJsonDeserializer();
                 jsonDeserializer.configure(Collections.emptyMap(), false);
                 return (Serde<I>) Serdes.serdeFrom(jsonSerializer, jsonDeserializer);
+            case AVRO:
+                return (Serde<I>) new OfflineAvroSerde<>(valueClass);
             default:
                 throw new IllegalArgumentException("Not implemented yet! deserializer=" + deserializer);
         }
