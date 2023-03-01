@@ -35,8 +35,9 @@
 
     <modules>
         <module>build-tools</module>
-        <module>engine</module>
         <module>configuration</module>
+        <module>engine</module>
+        <module>coverage</module>
     </modules>
 
     <repositories>
