@@ -1,8 +1,10 @@
 package io.vepo.datamotion.engine;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Objects;
 
@@ -14,6 +16,7 @@ import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,7 +26,10 @@ import io.vepo.datamotion.configuration.Deserializer;
 import io.vepo.datamotion.configuration.Serializer;
 import io.vepo.datamotion.configuration.StreamerDefinition;
 import io.vepo.datamotion.engine.serdes.OfflineAvroSerde;
+import io.vepo.datamotion.test.pojos.Document;
+import io.vepo.datamotion.test.pojos.Id;
 
+@Tag("docker")
 @DisplayName("Docker")
 class StreamerDockerTest extends AbstractStreamerDockerTest {
 
@@ -225,8 +231,8 @@ class StreamerDockerTest extends AbstractStreamerDockerTest {
         }
 
         @Test
-        @DisplayName("AVRO")
-        void avroTest() {
+        @DisplayName("AVRO - Dynamic Schema")
+        void dynamicAvroTest() {
             createTopics("input", "output");
             try (Streamer<KeyPojo, ValuePojo, KeyPojo, ValuePojo> streamer = new Streamer<>(StreamerDefinition.<KeyPojo, ValuePojo, KeyPojo, ValuePojo>builder(KeyPojo.class, ValuePojo.class, KeyPojo.class, ValuePojo.class)
                                                                                                               .applicationId(APP_ID)
@@ -249,6 +255,56 @@ class StreamerDockerTest extends AbstractStreamerDockerTest {
                         ObjectMapper mapper = new ObjectMapper();
                         assertEquals(new KeyPojo("XXXX"), keySerde.deserializer().deserialize(null, key));
                         assertEquals(new ValuePojo("YYY", 33), valueSerde.deserializer().deserialize(null, value));
+                    } catch (Exception ex) {
+                        fail(ex);
+                    }
+                }, Duration.ofSeconds(160));
+            }
+        }
+
+        
+
+        @Test
+        @DisplayName("AVRO - Dynamic Schema")
+        void specificAvroTest() {
+            createTopics("input", "output");
+            try (Streamer<Id, Document, Id, Document> streamer = new Streamer<>(StreamerDefinition.<Id, Document, Id, Document>builder(Id.class, Document.class, Id.class, Document.class)
+                                                                                                  .applicationId(APP_ID)
+                                                                                                  .keySerializer(Serializer.AVRO)
+                                                                                                  .valueSerializer(Serializer.AVRO)
+                                                                                                  .keyDeserializer(Deserializer.AVRO)
+                                                                                                  .valueDeserializer(Deserializer.AVRO)
+                                                                                                  .inputTopic("input")
+                                                                                                  .outputTopic("output")
+                                                                                                  .bootstrapServers(kafka.getBootstrapServers())
+                                                                                                  .build());
+                  TestConsumer<byte[], byte[]> consumer = start("output", ByteArrayDeserializer.class, ByteArrayDeserializer.class)) {
+                
+                //Serde<KeyPojo> keySerde = new OfflineAvroSerde<>(KeyPojo.class);
+                //Serde<ValuePojo> valueSerde = new OfflineAvroSerde<>(ValuePojo.class);
+                Id id = new Id(568L);
+                Document document = new Document(568L, "file.txt", 123);
+                streamer.start();
+
+                byte[] idBytes = assertDoesNotThrow(() -> {
+                    ByteBuffer idBuffer = id.toByteBuffer();
+                    byte[] bArray = new byte[idBuffer.remaining()];
+                    idBuffer.get(bArray);
+                    return bArray;
+                });
+
+                byte[] docBytes = assertDoesNotThrow(()-> {
+                    ByteBuffer docBuffer = document.toByteBuffer();
+                    byte[] bArray = new byte[docBuffer.remaining()];
+                    docBuffer.get(bArray);
+                    return bArray;
+                });
+                
+                sendMessage("input", idBytes, ByteArraySerializer.class , docBytes, ByteArraySerializer.class);
+                consumer.next((key, value) -> {
+                    try {
+                        assertEquals(new Id(568L), Id.fromByteBuffer(ByteBuffer.wrap(key)));
+                        assertEquals(new Document(568L, "file.txt", 123), Document.fromByteBuffer(ByteBuffer.wrap(value)));
                     } catch (Exception ex) {
                         fail(ex);
                     }

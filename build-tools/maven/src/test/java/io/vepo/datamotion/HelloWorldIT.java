@@ -1,22 +1,27 @@
 package io.vepo.datamotion;
 
-import com.soebes.itf.jupiter.extension.*;
-import com.soebes.itf.jupiter.maven.MavenExecutionResult;
-import org.assertj.core.api.Assertions;
-import org.assertj.core.api.Condition;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.*;
-import java.nio.file.Files;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
 import static com.soebes.itf.extension.assertj.MavenITAssertions.assertThat;
 import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.concurrent.TimeUnit;
+
+import org.assertj.core.api.Condition;
+import org.junit.jupiter.api.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.soebes.itf.jupiter.extension.MavenJupiterExtension;
+import com.soebes.itf.jupiter.extension.MavenTest;
+import com.soebes.itf.jupiter.maven.MavenExecutionResult;
+
+@Tag("maven")
 @MavenJupiterExtension
 public class HelloWorldIT {
     private static final Logger logger = LoggerFactory.getLogger(HelloWorldIT.class);

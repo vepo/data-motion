@@ -1,0 +1,10 @@
+{
+    "namespace": "io.vepo.datamotion.test.pojos",
+    "type": "record",
+    "name": "Document",
+    "fields": [
+        {"name": "id", "type": "long"},
+        {"name": "name", "type": "string"},
+        {"name": "size", "type": "int"}
+    ]
+}
