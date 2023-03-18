@@ -23,6 +23,17 @@
 
         <sonar.organization>vepo-github</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+        <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+        <sonar.jacoco.reportPath>
+            ${project.basedir}/build-tools/maven/target/site/jacoco/jacoco.xml,
+            ${project.basedir}/build-tools/maven/target/site/jacoco-aggregate/jacoco.xml,
+            ${project.basedir}/build-tools/target/site/jacoco-aggregate/jacoco.xml,
+            ${project.basedir}/configuration/target/site/jacoco-aggregate/jacoco.xml,
+            ${project.basedir}/engine/target/site/jacoco/jacoco.xml,
+            ${project.basedir}/engine/target/site/jacoco-aggregate/jacoco.xml,
+            ${project.basedir}/target/site/jacoco-aggregate/jacoco.xml
+        </sonar.jacoco.reportPath>
 
         <!-- Dependencies -->
         <kafka.version>3.2.0</kafka.version>
@@ -144,7 +155,7 @@
                             <includes>
                                 <include>**/*.class</include>
                             </includes>
-                         </configuration>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
