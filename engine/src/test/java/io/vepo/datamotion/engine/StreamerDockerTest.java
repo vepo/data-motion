@@ -254,7 +254,6 @@ class StreamerDockerTest extends AbstractStreamerDockerTest {
                 sendMessage("input", keySerde.serializer().serialize(null, new KeyPojo("XXXX")), ByteArraySerializer.class , valueSerde.serializer().serialize(null,  new ValuePojo("YYY", 33)), ByteArraySerializer.class);
                 consumer.next((key, value) -> {
                     try {
-                        ObjectMapper mapper = new ObjectMapper();
                         assertEquals(new KeyPojo("XXXX"), keySerde.deserializer().deserialize(null, key));
                         assertEquals(new ValuePojo("YYY", 33), valueSerde.deserializer().deserialize(null, value));
                     } catch (Exception ex) {
