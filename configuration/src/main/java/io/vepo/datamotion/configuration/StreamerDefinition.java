@@ -2,13 +2,13 @@ package io.vepo.datamotion.configuration;
 
 import java.util.Objects;
 
-public class StreamerDefinition<KI, VI, KO, VO> {
+public class StreamerDefinition<A, B, C, D> {
 
-    public static class StreamerDefinitionBuilder<KI, VI, KO, VO> {
-        private final Class<KI> inputKeyClass;
-        private final Class<VI> inputValueClass;
-        private final Class<KO> outputKeyClass;
-        private final Class<VO> outputValueClass;
+    public static class StreamerDefinitionBuilder<A, B, C, D> {
+        private final Class<A> inputKeyClass;
+        private final Class<B> inputValueClass;
+        private final Class<C> outputKeyClass;
+        private final Class<D> outputValueClass;
         private Serializer keySerializer;
         private Serializer valueSerializer;
         private Deserializer keyDeserializer;
@@ -18,54 +18,54 @@ public class StreamerDefinition<KI, VI, KO, VO> {
         private String inputTopic;
         private String outputTopic;
 
-        private StreamerDefinitionBuilder(Class<KI> inputKeyClass, Class<VI> inputValueClass, Class<KO> outputKeyClass, Class<VO> outputValueClass) {
+        private StreamerDefinitionBuilder(Class<A> inputKeyClass, Class<B> inputValueClass, Class<C> outputKeyClass, Class<D> outputValueClass) {
             this.inputKeyClass = inputKeyClass;
             this.inputValueClass = inputValueClass;
             this.outputKeyClass = outputKeyClass;
             this.outputValueClass = outputValueClass;
         }
 
-        public StreamerDefinitionBuilder<KI, VI, KO, VO> keySerializer(Serializer keySerializer) {
+        public StreamerDefinitionBuilder<A, B, C, D> keySerializer(Serializer keySerializer) {
             this.keySerializer = keySerializer;
             return this;
         }
 
-        public StreamerDefinitionBuilder<KI, VI, KO, VO> valueSerializer(Serializer valueSerializer) {
+        public StreamerDefinitionBuilder<A, B, C, D> valueSerializer(Serializer valueSerializer) {
             this.valueSerializer = valueSerializer;
             return this;
         }
 
-        public StreamerDefinitionBuilder<KI, VI, KO, VO> keyDeserializer(Deserializer keyDeserializer) {
+        public StreamerDefinitionBuilder<A, B, C, D> keyDeserializer(Deserializer keyDeserializer) {
             this.keyDeserializer = keyDeserializer;
             return this;
         }
 
-        public StreamerDefinitionBuilder<KI, VI, KO, VO> valueDeserializer(Deserializer valueDeserializer) {
+        public StreamerDefinitionBuilder<A, B, C, D> valueDeserializer(Deserializer valueDeserializer) {
             this.valueDeserializer = valueDeserializer;
             return this;
         }
 
-        public StreamerDefinitionBuilder<KI, VI, KO, VO> bootstrapServers(String bootstrapServers) {
+        public StreamerDefinitionBuilder<A, B, C, D> bootstrapServers(String bootstrapServers) {
             this.bootstrapServers = bootstrapServers;
             return this;
         }
 
-        public StreamerDefinitionBuilder<KI, VI, KO, VO> applicationId(String applicationId) {
+        public StreamerDefinitionBuilder<A, B, C, D> applicationId(String applicationId) {
             this.applicationId = applicationId;
             return this;
         }
 
-        public StreamerDefinitionBuilder<KI, VI, KO, VO> inputTopic(String inputTopic) {
+        public StreamerDefinitionBuilder<A, B, C, D> inputTopic(String inputTopic) {
             this.inputTopic = inputTopic;
             return this;
         }
 
-        public StreamerDefinitionBuilder<KI, VI, KO, VO> outputTopic(String outputTopic) {
+        public StreamerDefinitionBuilder<A, B, C, D> outputTopic(String outputTopic) {
             this.outputTopic = outputTopic;
             return this;
         }
 
-        public StreamerDefinition<KI, VI, KO, VO> build() {
+        public StreamerDefinition<A, B, C, D> build() {
             Objects.requireNonNull(this.keySerializer, "keySerializer is a required value!");
             Objects.requireNonNull(this.valueSerializer, "valueSerializer is a required value!");
             Objects.requireNonNull(this.keyDeserializer, "keyDeserializer is a required value!");
@@ -77,17 +77,17 @@ public class StreamerDefinition<KI, VI, KO, VO> {
         }
     }
 
-    public static <KI, VI, KO, VO> StreamerDefinitionBuilder<KI, VI, KO, VO> builder(Class<KI> inputKeyClass, 
-                                                                                     Class<VI> inputValueClass, 
-                                                                                     Class<KO> outputKeyClass, 
-                                                                                     Class<VO> outputValueClass) {
+    public static <A, B, C, D> StreamerDefinitionBuilder<A, B, C, D> builder(Class<A> inputKeyClass, 
+                                                                                     Class<B> inputValueClass, 
+                                                                                     Class<C> outputKeyClass, 
+                                                                                     Class<D> outputValueClass) {
         return new StreamerDefinitionBuilder<>(inputKeyClass, inputValueClass, outputKeyClass, outputValueClass);
     }
 
-    private final Class<KI> inputKeyClass;
-    private final Class<VI> inputValueClass;
-    private final Class<KO> outputKeyClass;
-    private final Class<VO> outputValueClass;
+    private final Class<A> inputKeyClass;
+    private final Class<B> inputValueClass;
+    private final Class<C> outputKeyClass;
+    private final Class<D> outputValueClass;
     private final Serializer keySerializer;
     private final Serializer valueSerializer;
     private final Deserializer keyDeserializer;
@@ -97,7 +97,7 @@ public class StreamerDefinition<KI, VI, KO, VO> {
     private final String inputTopic;
     private final String outputTopic;
 
-    private StreamerDefinition(StreamerDefinitionBuilder<KI, VI, KO, VO> builder) {
+    private StreamerDefinition(StreamerDefinitionBuilder<A, B, C, D> builder) {
         this.inputKeyClass = builder.inputKeyClass;
         this.inputValueClass = builder.inputValueClass;
         this.outputKeyClass = builder.outputKeyClass;
@@ -133,19 +133,19 @@ public class StreamerDefinition<KI, VI, KO, VO> {
         return keySerializer;
     }
 
-    public Class<KI> getInputKeyClass() {
+    public Class<A> getInputKeyClass() {
         return inputKeyClass;
     }
 
-    public Class<VI> getInputValueClass() {
+    public Class<B> getInputValueClass() {
         return inputValueClass;
     }
 
-    public Class<KO> getOutputKeyClass() {
+    public Class<C> getOutputKeyClass() {
         return outputKeyClass;
     }
 
-    public Class<VO> getOutputValueClass() {
+    public Class<D> getOutputValueClass() {
         return outputValueClass;
     }
 
