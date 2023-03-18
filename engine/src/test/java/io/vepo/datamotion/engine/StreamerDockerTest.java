@@ -26,8 +26,10 @@ import io.vepo.datamotion.configuration.Deserializer;
 import io.vepo.datamotion.configuration.Serializer;
 import io.vepo.datamotion.configuration.StreamerDefinition;
 import io.vepo.datamotion.engine.serdes.OfflineAvroSerde;
-import io.vepo.datamotion.test.pojos.Document;
-import io.vepo.datamotion.test.pojos.Id;
+import io.vepo.datamotion.test.pojos.avro.Document;
+import io.vepo.datamotion.test.pojos.avro.Id;
+import io.vepo.datamotion.test.pojos.protobuf.Key;
+import io.vepo.datamotion.test.pojos.protobuf.Person;
 
 @Tag("docker")
 @DisplayName("Docker")
@@ -262,8 +264,6 @@ class StreamerDockerTest extends AbstractStreamerDockerTest {
             }
         }
 
-        
-
         @Test
         @DisplayName("AVRO - Dynamic Schema")
         void specificAvroTest() {
@@ -305,6 +305,43 @@ class StreamerDockerTest extends AbstractStreamerDockerTest {
                     try {
                         assertEquals(new Id(568L), Id.fromByteBuffer(ByteBuffer.wrap(key)));
                         assertEquals(new Document(568L, "file.txt", 123), Document.fromByteBuffer(ByteBuffer.wrap(value)));
+                    } catch (Exception ex) {
+                        fail(ex);
+                    }
+                }, Duration.ofSeconds(160));
+            }
+        }
+
+        @Test
+        @DisplayName("Protobuf")
+        void protobufTest() {
+            createTopics("input", "output");
+            try (Streamer<Key, Person, Key, Person> streamer = new Streamer<>(StreamerDefinition.<Key, Person, Key, Person>builder(Key.class, Person.class, Key.class, Person.class)
+                                                                                                .applicationId(APP_ID)
+                                                                                                .keySerializer(Serializer.PROTOBUF)
+                                                                                                .valueSerializer(Serializer.PROTOBUF)
+                                                                                                .keyDeserializer(Deserializer.PROTOBUF)
+                                                                                                .valueDeserializer(Deserializer.PROTOBUF)
+                                                                                                .inputTopic("input")
+                                                                                                .outputTopic("output")
+                                                                                                .bootstrapServers(kafka.getBootstrapServers())
+                                                                                                .build());
+                  TestConsumer<byte[], byte[]> consumer = start("output", ByteArrayDeserializer.class, ByteArrayDeserializer.class)) {
+                
+                streamer.start();
+                Key protoKey = Key.newBuilder()
+                             .setKey("000001")
+                             .build();
+                Person person = Person.newBuilder()
+                                      .setId(1)
+                                      .setName("user")
+                                      .setEmail("user@user.com")
+                                      .build();
+                sendMessage("input", protoKey.toByteArray(), ByteArraySerializer.class , person.toByteArray(), ByteArraySerializer.class);
+                consumer.next((key, value) -> {
+                    try {
+                        assertEquals(protoKey, Key.parseFrom(key));
+                        assertEquals(person, Person.parseFrom(value));
                     } catch (Exception ex) {
                         fail(ex);
                     }

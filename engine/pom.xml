@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>data-motion</artifactId>
         <groupId>io.vepo.datamotion</groupId>
@@ -71,6 +71,11 @@
             <version>1.7.36</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>3.22.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -80,21 +85,41 @@
                 <artifactId>avro-maven-plugin</artifactId>
                 <version>${avro.version}</version>
                 <executions>
-                   <execution>
-                      <id>schemas</id>
-                      <phase>generate-sources</phase>
-                      <goals>
-                         <goal>schema</goal>
-                         <goal>protocol</goal>
-                         <goal>idl-protocol</goal>
-                      </goals>
-                      <configuration>
-                         <sourceDirectory>${project.basedir}/src/test/resources/avro/</sourceDirectory>
-                         <outputDirectory>${project.basedir}/target/test-classes/</outputDirectory>
-                      </configuration>
-                   </execution>
+                    <execution>
+                        <id>schemas</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>schema</goal>
+                            <goal>protocol</goal>
+                            <goal>idl-protocol</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${project.basedir}/src/test/avro/</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-test-sources</outputDirectory>
+                        </configuration>
+                    </execution>
                 </executions>
-             </plugin>
+            </plugin>
+            <plugin>
+                <groupId>com.github.os72</groupId>
+                <artifactId>protoc-jar-maven-plugin</artifactId>
+                <version>3.11.4</version>
+                <executions>
+                    <execution>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <protocVersion>3.15.8</protocVersion>
+                            <inputDirectories>
+                                <include>${project.basedir}/src/test/protobuf/</include>
+                            </inputDirectories>
+                            <outputDirectory>${project.build.directory}/generated-test-sources</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

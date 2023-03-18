@@ -23,8 +23,9 @@ import io.confluent.kafka.serializers.KafkaJsonDeserializer;
 import io.confluent.kafka.serializers.KafkaJsonSerializer;
 import io.vepo.datamotion.configuration.Deserializer;
 import io.vepo.datamotion.configuration.Serializer;
-import io.vepo.datamotion.configuration.StreamerDefinition;/*  */
+import io.vepo.datamotion.configuration.StreamerDefinition;
 import io.vepo.datamotion.engine.serdes.OfflineAvroSerde;
+import io.vepo.datamotion.engine.serdes.OfflineProtobufSerde;
 
 public class Streamer<KI, VI, KO, VO> implements Closeable {
     private static final Logger logger = LoggerFactory.getLogger(Streamer.class);
@@ -44,6 +45,7 @@ public class Streamer<KI, VI, KO, VO> implements Closeable {
         return builder.build();
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private static <O> Serde<O> serde(Serializer serializer, Class<O> valueClass) {
         switch(serializer) {
             case STRING:
@@ -60,11 +62,14 @@ public class Streamer<KI, VI, KO, VO> implements Closeable {
                 return (Serde<O>) Serdes.serdeFrom(jsonSerializer, jsonDeserializer);
             case AVRO:
                 return (Serde<O>) new OfflineAvroSerde<>(valueClass);
+            case PROTOBUF:
+                return (Serde<O>) new OfflineProtobufSerde(valueClass);
             default:
                 throw new IllegalArgumentException("Not implemented yet! serializer=" + serializer);
         }
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private static <I> Serde<I> serde(Deserializer deserializer, Class<I> valueClass) {
         switch(deserializer) {
             case STRING:
@@ -81,6 +86,8 @@ public class Streamer<KI, VI, KO, VO> implements Closeable {
                 return (Serde<I>) Serdes.serdeFrom(jsonSerializer, jsonDeserializer);
             case AVRO:
                 return (Serde<I>) new OfflineAvroSerde<>(valueClass);
+            case PROTOBUF:
+                return (Serde<I>) new OfflineProtobufSerde(valueClass);
             default:
                 throw new IllegalArgumentException("Not implemented yet! deserializer=" + deserializer);
         }
@@ -130,6 +137,7 @@ public class Streamer<KI, VI, KO, VO> implements Closeable {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     private static <KI, VI, KO, VO> KStream<KO, VO> applyDefinition(KStream<KI, VI> stream) {
         return (KStream<KO, VO>) stream.peek((key, value) ->{
             logger.info("Message passed! key={} value={}", key, value);

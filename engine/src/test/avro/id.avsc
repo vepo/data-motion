@@ -1,5 +1,5 @@
 {
-    "namespace": "io.vepo.datamotion.test.pojos",
+    "namespace": "io.vepo.datamotion.test.pojos.avro",
     "type": "record",
     "name": "Id",
     "fields": [

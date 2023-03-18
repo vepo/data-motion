@@ -1,5 +1,5 @@
 package io.vepo.datamotion.configuration;
 
 public enum Serializer {
-    STRING, LONG, INT, JSON, AVRO
+    STRING, LONG, INT, JSON, AVRO, PROTOBUF
 }
